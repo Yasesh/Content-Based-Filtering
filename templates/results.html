@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended Courses</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="results-wrapper">
+    <header class="results-header">
+        <h1 class="results-title">Recommended Courses</h1>
+        <a href="/" class="back-link">← Back to Search</a>
+    </header>
+
+    <!-- Algorithm Info Section -->
+    <div class="algorithm-info">
+        <h2 class="algorithm-title">🔬 Algorithm: {{ model_name }}</h2>
+        
+        <div class="algorithm-details">
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ Pros</h3>
+                    <ul>
+                        {% for pro in model_pros %}
+                        <li>{{ pro }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ Cons</h3>
+                    <ul>
+                        {% for con in model_cons %}
+                        <li>{{ con }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="metrics">
+                <h3>📊 Performance Metrics</h3>
+                <div class="metric-cards">
+                    {% for metric_name, metric_value in metrics.items() %}
+                    <div class="metric-card">
+                        <span class="metric-label">{{ metric_name.replace('_', ' ').title() }}</span>
+                        <span class="metric-value">
+                            {% if metric_value is number %}
+                                {{ "%.2f"|format(metric_value) }}
+                            {% else %}
+                                {{ metric_value }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Cards Grid -->
+    <h2 class="section-title">Results</h2>
+    <div class="courses-container">
+        {% for row in courses.iterrows() %}
+        <div class="course-card">
+            <div class="card-content">
+                <h2>{{row[1]['Course Name']}}</h2>
+                <p class="university">🏫 {{row[1]['University']}}</p>
+                
+                <div class="badges">
+                    <span class="badge level-badge">{{row[1]['Difficulty Level']}}</span>
+                    <span class="badge rating-badge">⭐ {{row[1]['Course Rating']}}</span>
+                </div>
+
+                <p class="skills"><strong>Skills:</strong> {{row[1]['Skills']}}</p>
+            </div>
+
+            <a href="{{row[1]['Course URL']}}" target="_blank" class="card-action">
+                <button class="primary-btn outline">View Course</button>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Recommendation System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="search-wrapper">
+    <div class="container">
+        <h1>🎓 Course Finder</h1>
+        <p class="subtitle">Discover the perfect courses based on your interests.</p>
+
+        <form action="/recommend" method="POST">
+            <div class="input-group">
+                <input type="text" name="topic" placeholder="e.g., Python, Machine Learning, Design" required>
+            </div>
+
+            <div class="input-group">
+                <select name="level">
+                    <!-- default to any difficulty so form submits a value even if user does not change it -->
+                    <option value="Any" selected>Any Level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <select name="model_type">
+                    <option value="content" selected>Content-Based Filtering</option>
+                    <option value="collaborative">Collaborative Filtering</option>
+                    <option value="hybrid">Hybrid Model</option>
+                </select>
+            </div>
+
+            <button type="submit" class="primary-btn">Recommend Courses</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
