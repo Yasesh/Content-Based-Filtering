@@ -65,9 +65,16 @@
         </div>
 
         <section class="results-grid">
-            {% if courses is not none and not courses.empty %}
+            {% if is_scraped %}
+            <div class="scraping-notice">
+                <p>🌐 <strong>Note:</strong> We couldn't find matches in our local dataset. These results are fresh from
+                    <strong>Coursera</strong>.</p>
+            </div>
+            {% endif %}
+
+            {% if courses and courses|length > 0 %}
             <div class="course-grid">
-                {% for _, row in courses.iterrows() %}
+                {% for row in courses %}
                 <div class="course-card">
                     <div class="card-body">
                         <h2 class="course-title">{{ row['Course Name'] }}</h2>
@@ -91,7 +98,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <p>No courses found matching your criteria. Try adjusting your search terms or level.</p>
+                <p>No courses found matching your criteria, even on the web. Try adjusting your search terms.</p>
                 <a href="/" class="btn-primary"
                     style="display:inline-block; margin-top: 1rem; text-decoration: none;">Refine Search</a>
             </div>
