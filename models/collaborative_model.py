@@ -25,56 +25,64 @@ user_similarity_df = pd.DataFrame(
 courses = pd.read_csv("data/courses.csv")
 
 
-def recommend_courses_collaborative(user_id, n_recommendations=5):
+def recommend_courses_collaborative(user_id=1, n_recommendations=5):
     """
     Recommend courses using collaborative filtering.
     Find similar users and recommend courses they rated highly.
     """
     if user_id not in user_similarity_df.index:
-        # If user not in database, return empty
-        return pd.DataFrame()
+        # Fallback to top-rated courses for new users
+        return courses.sort_values('Course Rating', ascending=False).head(n_recommendations)
     
-    # Get similar users (exclude the user themselves)
-    similar_users = user_similarity_df[user_id].sort_values(ascending=False)[1:6]
+    # Get top 10 similar users
+    similar_users = user_similarity_df[user_id].sort_values(ascending=False)[1:11]
     
-    if len(similar_users) == 0:
+    if similar_users.empty:
         return pd.DataFrame()
     
     # Get courses rated by similar users
     similar_user_ids = similar_users.index
-    similar_users_ratings = ratings[ratings['user_id'].isin(similar_user_ids)]
-    
-    # Get courses rated 4 or 5 by similar users
-    good_courses = similar_users_ratings[similar_users_ratings['rating'] >= 4]
-    
-    # Courses already rated by current user
-    user_rated = ratings[ratings['user_id'] == user_id]['course_id'].values
+    similar_user_data = ratings[ratings['user_id'].isin(similar_user_ids)]
     
     # Filter to courses not yet rated by current user
-    good_courses = good_courses[~good_courses['course_id'].isin(user_rated)]
+    user_rated = ratings[ratings['user_id'] == user_id]['course_id'].values
+    unseen_courses = similar_user_data[~similar_user_data['course_id'].isin(user_rated)]
     
-    # Score by frequency and average rating
-    course_scores = good_courses.groupby('course_id').agg({
-        'rating': ['mean', 'count']
-    }).reset_index()
+    if unseen_courses.empty:
+        return pd.DataFrame()
+        
+    # Weighted score calculation based on user similarity
+    sim_dict = similar_users.to_dict()
+    unseen_courses = unseen_courses.copy()
+    unseen_courses['weight'] = unseen_courses['user_id'].map(sim_dict)
+    unseen_courses['weighted_rating'] = unseen_courses['rating'] * unseen_courses['weight']
     
-    course_scores.columns = ['course_id', 'avg_rating', 'count']
-    course_scores = course_scores.sort_values(['avg_rating', 'count'], ascending=False)
+    # Group by course_id and calculate total weighted score
+    course_scores = unseen_courses.groupby('course_id').agg({
+        'weighted_rating': 'sum',
+        'weight': 'sum'
+    })
+    
+    course_scores['final_score'] = course_scores['weighted_rating'] / course_scores['weight']
+    course_scores = course_scores.sort_values('final_score', ascending=False)
     
     # Get top N course IDs
-    top_courses = course_scores.head(n_recommendations)['course_id'].values
+    top_course_ids = course_scores.head(n_recommendations).index.values
     
-    # Return course details
-    result = courses.iloc[top_courses][[
+    # Return course details (ensuring we don't index out of bounds)
+    # We use .isin for safer filtering rather than iloc with potentially non-continuous indices
+    result = courses[courses.index.isin(top_course_ids)].copy()
+    result['similarity_score'] = 1.0 # Base score for collab
+    
+    return result[[
         'Course Name',
         'University',
         'Difficulty Level',
         'Course Rating',
         'Course URL',
-        'Skills'
-    ]].reset_index(drop=True)
-    
-    return result
+        'Skills',
+        'similarity_score'
+    ]]
 
 
 def get_collaborative_metrics(user_id):

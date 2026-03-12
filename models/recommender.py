@@ -27,35 +27,42 @@ tfidf_matrix = vectorizer.fit_transform(courses["features"])
 similarity_matrix = cosine_similarity(tfidf_matrix)
 
 
-def recommend_courses(topic, level=None):
+def recommend_courses(topic, level=None, n_recommendations=5):
+    """
+    Recommend courses using vector similarity between the query and course features.
+    """
+    if not topic:
+        return pd.DataFrame()
 
-    filtered = courses[
-        courses["Course Name"].str.contains(topic, case=False, na=False)
-    ]
-
-    if level:
-        filtered = filtered[
-            filtered["Difficulty Level"].str.contains(level, case=False, na=False)
+    # Transform query into the same TF-IDF space
+    query_vector = vectorizer.transform([topic.lower()])
+    
+    # Calculate similarity between query and all courses
+    query_similarity = cosine_similarity(query_vector, tfidf_matrix).flatten()
+    
+    # Create a copy of courses with similarity scores
+    results = courses.copy()
+    results["similarity_score"] = query_similarity
+    
+    # Apply difficulty level filter if provided
+    if level and level != "Any":
+        results = results[
+            results["Difficulty Level"].str.contains(level, case=False, na=False)
         ]
-
-    if filtered.empty:
-        return []
-
-    idx = filtered.index[0]
-
-    similarity_scores = list(enumerate(similarity_matrix[idx]))
-
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-
-    similarity_scores = similarity_scores[1:6]
-
-    course_indices = [i[0] for i in similarity_scores]
-
-    return courses.iloc[course_indices][[
+    
+    # Sort by similarity score
+    results = results.sort_values("similarity_score", ascending=False)
+    
+    # Filter out zero similarity results (to avoid completely irrelevant matches)
+    results = results[results["similarity_score"] > 0]
+    
+    # Return top N
+    return results.head(n_recommendations)[[
         "Course Name",
         "University",
         "Difficulty Level",
         "Course Rating",
         "Course URL",
-        "Skills"
+        "Skills",
+        "similarity_score"
     ]]
