@@ -12,6 +12,17 @@
         <a href="/" class="logo">
             <span>🎓</span> AI Course Finder
         </a>
+        <div class="nav-links">
+            {% if current_user.is_authenticated %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/recommendations">My Models</a>
+                <a href="/admin/analytics">Analytics</a>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
     </nav>
 
     <div class="hero">
@@ -40,7 +51,8 @@
                 <div class="form-group">
                     <label for="model_type">Recommendation Model</label>
                     <select id="model_type" name="model_type" class="form-control">
-                        <option value="content" selected>Content-Based Filtering</option>
+                        <option value="auto" selected>Auto - Let AI Decide</option>
+                        <option value="content">Content-Based Filtering</option>
                         <option value="collaborative">Collaborative Filtering</option>
                         <option value="hybrid">Hybrid Model</option>
                     </select>

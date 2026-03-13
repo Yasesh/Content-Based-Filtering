@@ -1,38 +1,68 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from database.db import UserRating, Course
 
-# Load ratings data
-ratings = pd.read_csv("data/user_ratings.csv")
+def get_current_ratings_df():
+    # Fetch all ratings from DB dynamically for collaborative filtering
+    ratings_query = UserRating.query.all()
+    if not ratings_query:
+        return pd.DataFrame(columns=['user_id', 'course_id', 'rating'])
+    
+    data = [{'user_id': r.user_id, 'course_id': r.course_id, 'rating': r.rating} for r in ratings_query]
+    return pd.DataFrame(data)
 
-# Create user-item matrix
-user_item_matrix = ratings.pivot_table(
-    index='user_id',
-    columns='course_id',
-    values='rating',
-    fill_value=0
-)
-
-# Calculate user-user similarity using cosine similarity
-user_similarity = cosine_similarity(user_item_matrix)
-user_similarity_df = pd.DataFrame(
-    user_similarity,
-    index=user_item_matrix.index,
-    columns=user_item_matrix.index
-)
-
-# Load courses data for metadata
-courses = pd.read_csv("data/courses.csv")
-
+def get_courses_df():
+    courses_query = Course.query.all()
+    data = []
+    for c in courses_query:
+        data.append({
+            'course_id': c.id,
+            'Course Name': c.course_name,
+            'University': c.university,
+            'Difficulty Level': c.difficulty_level,
+            'Course Rating': c.course_rating,
+            'Course URL': c.course_url,
+            'Skills': c.skills
+        })
+    df = pd.DataFrame(data)
+    if not df.empty:
+        df = df.set_index('course_id')
+    return df
 
 def recommend_courses_collaborative(user_id=1, n_recommendations=5):
     """
     Recommend courses using collaborative filtering.
     Find similar users and recommend courses they rated highly.
     """
+    ratings = get_current_ratings_df()
+    courses = get_courses_df()
+    
+    if ratings.empty or courses.empty:
+        return pd.DataFrame()
+        
+    try:
+        # Create user-item matrix
+        user_item_matrix = ratings.pivot_table(
+            index='user_id',
+            columns='course_id',
+            values='rating',
+            fill_value=0
+        )
+        
+        # Calculate user-user similarity using cosine similarity
+        user_similarity = cosine_similarity(user_item_matrix)
+        user_similarity_df = pd.DataFrame(
+            user_similarity,
+            index=user_item_matrix.index,
+            columns=user_item_matrix.index
+        )
+    except ValueError:
+        return courses.sort_values('Course Rating', ascending=False).head(n_recommendations).reset_index()
+
     if user_id not in user_similarity_df.index:
         # Fallback to top-rated courses for new users
-        return courses.sort_values('Course Rating', ascending=False).head(n_recommendations)
+        return courses.sort_values('Course Rating', ascending=False).head(n_recommendations).reset_index()
     
     # Get top 10 similar users
     similar_users = user_similarity_df[user_id].sort_values(ascending=False)[1:11]
@@ -40,7 +70,6 @@ def recommend_courses_collaborative(user_id=1, n_recommendations=5):
     if similar_users.empty:
         return pd.DataFrame()
     
-    # Get courses rated by similar users
     similar_user_ids = similar_users.index
     similar_user_data = ratings[ratings['user_id'].isin(similar_user_ids)]
     
@@ -69,12 +98,12 @@ def recommend_courses_collaborative(user_id=1, n_recommendations=5):
     # Get top N course IDs
     top_course_ids = course_scores.head(n_recommendations).index.values
     
-    # Return course details (ensuring we don't index out of bounds)
-    # We use .isin for safer filtering rather than iloc with potentially non-continuous indices
     result = courses[courses.index.isin(top_course_ids)].copy()
     result['similarity_score'] = 1.0 # Base score for collab
+    result = result.reset_index()
     
     return result[[
+        'course_id',
         'Course Name',
         'University',
         'Difficulty Level',
@@ -83,7 +112,6 @@ def recommend_courses_collaborative(user_id=1, n_recommendations=5):
         'Skills',
         'similarity_score'
     ]]
-
 
 def get_collaborative_metrics(user_id):
     """

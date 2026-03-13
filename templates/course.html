@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course.course_name }} - AI Course Finder</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .star-rating {
+            direction: rtl;
+            display: inline-block;
+        }
+        .star-rating input[type="radio"] {
+            display: none;
+        }
+        .star-rating label {
+            font-size: 2rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star-rating input[type="radio"]:checked ~ label {
+            color: #f39c12;
+        }
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo"><span>🎓</span> AI Course Finder</a>
+        <div class="nav-links">
+            {% if current_user.is_authenticated %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/recommendations">My Recommendations</a>
+                <a href="/admin/analytics">Analytics</a>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+    <main class="course-detail-page">
+        <a href="javascript:history.back()" class="btn-back">← Back</a>
+        
+        <div class="course-header mt-4">
+            <h1>{{ course.course_name }}</h1>
+            <p class="university">🏫 {{ course.university }}</p>
+            <div class="badge-row">
+                <span class="badge badge-primary">{{ course.difficulty_level }}</span>
+                <span class="badge badge-success">Platform Rating: ⭐ {{ course.course_rating }}</span>
+            </div>
+        </div>
+
+        <div class="course-body mt-4">
+            <h3>Description</h3>
+            <p>{{ course.course_description }}</p>
+            
+            <h3 class="mt-4">Skills Gained</h3>
+            <p>{{ course.skills }}</p>
+
+            <a href="{{ course.course_url }}" target="_blank" class="btn-primary mt-4" style="display:inline-block; text-decoration:none;">Go to Course Page on Provider</a>
+        </div>
+
+        <div class="rating-section mt-4 p-4 border rounded">
+            <h2>Rate this Course</h2>
+            {% if current_user.is_authenticated %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+                <form action="/rate_course" method="POST">
+                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                    <div class="star-rating">
+                        {% for i in range(5, 0, -1) %}
+                            <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if user_rating and user_rating.rating == i %}checked{% endif %}>
+                            <label for="star{{ i }}">★</label>
+                        {% endfor %}
+                    </div>
+                    <br>
+                    <button type="submit" class="btn-primary mt-2">Submit Rating</button>
+                </form>
+            {% else %}
+                <p><a href="/login">Login</a> to rate this course and improve personalized recommendations.</p>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

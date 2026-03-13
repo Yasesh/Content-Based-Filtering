@@ -43,6 +43,7 @@ def recommend_courses(topic, level=None, n_recommendations=5):
     # Create a copy of courses with similarity scores
     results = courses.copy()
     results["similarity_score"] = query_similarity
+    results["course_id"] = results.index
     
     # Apply difficulty level filter if provided
     if level and level != "Any":
@@ -58,6 +59,7 @@ def recommend_courses(topic, level=None, n_recommendations=5):
     
     # Return top N
     return results.head(n_recommendations)[[
+        "course_id",
         "Course Name",
         "University",
         "Difficulty Level",

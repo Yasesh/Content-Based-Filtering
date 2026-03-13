@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Course Finder</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo"><span>🎓</span> AI Course Finder</a>
+        <div class="nav-links">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/recommendations">My Recommendations</a>
+            <a href="/admin/analytics">Analytics</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    <main class="dashboard-page">
+        <h1>Welcome, {{ current_user.name }}</h1>
+        
+        <section class="dashboard-section mt-4">
+            <h2>Your Personalized AI Recommendations</h2>
+            <p class="text-muted">{{ model_used }}</p>
+            <div class="course-grid">
+                {% for row in recommended %}
+                <div class="course-card">
+                    <div class="card-body">
+                        <h3 class="course-title">{{ row['Course Name'] }}</h3>
+                        <p class="university">🏫 {{ row['University'] }}</p>
+                        <div class="badge-row">
+                            <span class="badge badge-primary">{{ row['Difficulty Level'] }}</span>
+                            <span class="badge badge-success">⭐ {{ row['Course Rating'] }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/course/{{ row['course_id'] if row.get('course_id') else '' }}" class="btn-outline">View Details</a>
+                    </div>
+                </div>
+                {% else %}
+                <p>No recommendations available right now.</p>
+                {% endfor %}
+            </div>
+            <a href="/recommendations" class="btn-primary" style="display:inline-block; margin-top:20px; text-decoration:none;">View All Recommendations</a>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Recently Viewed</h2>
+            <ul class="history-list">
+                {% for log in history %}
+                <li>You viewed <strong>{{ log.course.course_name }}</strong> on {{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</li>
+                {% else %}
+                <li>No recently viewed courses.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Your Ratings</h2>
+            <ul class="history-list">
+                {% for rating in ratings %}
+                <li>You rated <strong>{{ rating.course.course_name }}</strong> {{ rating.rating }} ⭐ on {{ rating.created_at.strftime('%Y-%m-%d') }}</li>
+                {% else %}
+                <li>You haven't rated any courses yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

@@ -55,6 +55,7 @@ def recommend_courses_hybrid(topic, level=None, user_id=1, n_recommendations=5):
         combined = combined.sort_values('final_score', ascending=False)
     
     return combined.head(n_recommendations)[[
+        'course_id',
         'Course Name',
         'University',
         'Difficulty Level',
